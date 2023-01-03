@@ -440,8 +440,8 @@ async fn main() -> Result<()> {
             tokio::fs::write(
                 format!("{}/connection.json", CONFIG_PATH),
                 serde_json::json!({
-                    port: payload.port,
-                    ip: new_ip
+                    "port": payload.port,
+                    "ip": new_ip
                 }),
             )
             .await
