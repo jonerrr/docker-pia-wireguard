@@ -521,7 +521,7 @@ async fn main() -> Result<()> {
                 .unwrap(),
             );
             match reqwest::Client::new()
-                .post(format!("{qb_url}/api/v2/app/setPreferences"))
+                .post(format!("localhost:8080/api/v2/app/setPreferences"))
                 .form(&qb_prefs)
                 .send()
                 .await?
