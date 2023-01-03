@@ -1,0 +1,20 @@
+[package]
+name = "pia-wireguard"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jonah"]
+
+[dependencies]
+anyhow = "1.0.68"
+base64 = "0.20.0"
+chrono = { version = "0.4.23", features = ["serde"] }
+interfaces = "0.0.8"
+iptables = "0.5.0"
+regex = "1.7.0"
+reqwest = { version = "0.11.13", features = ["json", "native-tls"] }
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.91"
+# serde_urlencoded = "0.7.1"
+sysctl = "0.5.4"
+tokio = { version = "1.23.0", features = ["full"] }
+wireguard-keys = "0.1.1"

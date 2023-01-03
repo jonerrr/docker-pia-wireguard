@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  vpn:
+    image: j0ner/pia-wireguard
+    container_name: vpn
+    ports:
+      - 8080:8080
+    environment:
+      - PIA_USER
+      - PIA_PASS
+      - PIA_REGION_ID
+      - VPN_IP_CHECK_DELAY
+      - PORT_FORWARDING
+      - VPN_LAN_NETWORKS
+      - PORT_FILE
+      - PERSIST_PORT
+      - BYPASS_PORTS
+    volumes:
+      - ./config:/config
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      # ipv6 not supported
+      - net.ipv6.conf.default.disable_ipv6=1
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.lo.disable_ipv6=1
