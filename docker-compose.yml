@@ -13,9 +13,11 @@ services:
       - VPN_IP_CHECK_DELAY
       - PORT_FORWARDING
       - VPN_LAN_NETWORKS
-      - PORT_FILE
+      - CONNECTION_FILE
       - PERSIST_PORT
       - BYPASS_PORTS
+      - MAM_ID
+      - SET_QBITTORRENT_PORT
     volumes:
       - ./config:/config
     cap_add:
@@ -26,3 +28,7 @@ services:
       - net.ipv6.conf.default.disable_ipv6=1
       - net.ipv6.conf.all.disable_ipv6=1
       - net.ipv6.conf.lo.disable_ipv6=1
+
+# vpn          | thread 'main' panicked at '[ERROR] Failed to login: reqwest::Error { kind: Decode, source: Error("missing field `token`", line: 1, column: 74) }', src/main.rs:151:10
+# vpn          | note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+# ^C^C^CERRO[0003] got 3 SIGTERM/SIGINTs, forcing shutdown    

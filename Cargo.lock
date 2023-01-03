@@ -803,6 +803,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "sysctl",
  "tokio",
  "wireguard-keys",

@@ -65,11 +65,6 @@ struct BindPort {
     message: String,
 }
 
-// #[derive(Debug, Serialize)]
-// struct QBittorrentBody {
-//     port: i32,
-// }
-
 const CONFIG_PATH: &str = "/config";
 
 #[tokio::main]
@@ -268,7 +263,6 @@ async fn main() -> Result<()> {
 
     let ipt = iptables::new(false).unwrap();
 
-    // input rules
     // drop everything forwarded between network interfaces
     ipt.set_policy("filter", "FORWARD", "DROP").unwrap();
     // drop everything incoming
@@ -302,8 +296,6 @@ async fn main() -> Result<()> {
     .unwrap();
     // accept incoming on localhost
     ipt.append("filter", "INPUT", "-i lo -j ACCEPT").unwrap();
-
-    // output rules
     // drop everything outgoing
     ipt.set_policy("filter", "OUTPUT", "DROP").unwrap();
     // accept all udp outputs through wireguard interface
@@ -336,44 +328,44 @@ async fn main() -> Result<()> {
     // accept outgoing for localhost
     ipt.append("filter", "OUTPUT", "-o lo -j ACCEPT").unwrap();
 
-    let ports =
-        env::var("BYPASS_PORTS").expect("[ERROR] Missing BYPASS_PORTS in environment variables");
+    if let Ok(ports) = env::var("BYPASS_PORTS") {
+        for port in ports.split(",") {
+            let (port_num, protocol) = port.split_once("/").unwrap();
+            println!("[INFO] Bypassing {port}");
+            // drop incoming on wireguard interface for specified port and protocol
+            ipt.insert(
+                "filter",
+                "INPUT",
+                &format!("-i wg0 -p {protocol} --dport {port_num} -j DROP"),
+                1,
+            )
+            .unwrap();
+            // accept incoming on default interface for specified port and protocol
+            ipt.append(
+                "filter",
+                "INPUT",
+                &format!("-i {interface_name} -p {protocol} --dport {port_num} -j ACCEPT"),
+            )
+            .unwrap();
 
-    for port in ports.split(",") {
-        let (port_num, protocol) = port.split_once("/").unwrap();
-        println!("[INFO] Bypassing {port}");
-        // drop incoming on wireguard interface for specified port and protocol
-        ipt.insert(
-            "filter",
-            "INPUT",
-            &format!("-i wg0 -p {protocol} --dport {port_num} -j DROP"),
-            1,
-        )
-        .unwrap();
-        // accept incoming on default interface for specified port and protocol
-        ipt.append(
-            "filter",
-            "INPUT",
-            &format!("-i {interface_name} -p {protocol} --dport {port_num} -j ACCEPT"),
-        )
-        .unwrap();
-
-        // drop outgoing on wireguard interface for specified port and protocol
-        ipt.insert(
-            "filter",
-            "OUTPUT",
-            &format!("-o wg0 -p {protocol} --sport {port_num} -j DROP"),
-            1,
-        )
-        .unwrap();
-        // accept outgoing on default interface for specified port and protocol
-        ipt.append(
-            "filter",
-            "OUTPUT",
-            &format!("-o {interface_name} -p {protocol} --sport {port_num} -j ACCEPT"),
-        )
-        .unwrap();
+            // drop outgoing on wireguard interface for specified port and protocol
+            ipt.insert(
+                "filter",
+                "OUTPUT",
+                &format!("-o wg0 -p {protocol} --sport {port_num} -j DROP"),
+                1,
+            )
+            .unwrap();
+            // accept outgoing on default interface for specified port and protocol
+            ipt.append(
+                "filter",
+                "OUTPUT",
+                &format!("-o {interface_name} -p {protocol} --sport {port_num} -j ACCEPT"),
+            )
+            .unwrap();
+        }
     }
+
     println!("[INFO] iptables modified",);
 
     if let Ok(delay) = env::var("VPN_IP_CHECK_DELAY") {
@@ -421,7 +413,7 @@ async fn main() -> Result<()> {
             } else {
                 println!("[INFO] New port signature is being fetched");
                 api_client
-                    .get(format!("https://{}:19999/getSignature", server.cn,))
+                    .get(format!("https://{}:19999/getSignature", server.cn))
                     .query(&[("token", token.token)])
                     .send()
                     .await?
@@ -440,15 +432,24 @@ async fn main() -> Result<()> {
             payload.expires_at
         );
 
-        if env::var("PORT_FILE")
+        if env::var("CONNECTION_FILE")
             .unwrap_or_else(|_| "false".to_string())
             .parse::<bool>()
             .unwrap()
         {
-            tokio::fs::write(format!("{}/port", CONFIG_PATH), payload.port.to_string())
-                .await
-                .expect("[ERROR] failed to save port to file");
-            println!("[INFO] Port saved to {}/port", CONFIG_PATH);
+            tokio::fs::write(
+                format!("{}/connection.json", CONFIG_PATH),
+                serde_json::json!({
+                    port: payload.port,
+                    ip: new_ip
+                }),
+            )
+            .await
+            .expect("[ERROR] failed to save data to file");
+            println!(
+                "[INFO] Connection data saved to {}/connection.json",
+                CONFIG_PATH
+            );
         }
         if env::var("PERSIST_PORT")
             .unwrap_or_else(|_| "false".to_string())
@@ -467,52 +468,69 @@ async fn main() -> Result<()> {
             );
         }
 
-        // if let Ok(qb_url) = env::var("QBITTORRENT_URL") {
-        // println!("[INFO] Setting QBittorrent port, this temporarily allows traffic through the default interface");
+        if let Ok(mam_id) = env::var("MAM_ID") {
+            println!("[INFO] Setting seedbox IP for MyAnonaMouse");
+            match reqwest::Client::new()
+                .get("https://t.myanonamouse.net/json/dynamicSeedbox.php")
+                .header("Cookie", mam_id)
+                .send()
+                .await?
+                .error_for_status()
+            {
+                Ok(_) => println!("[INFO] seedbox IP set for MyAnonaMouse"),
+                Err(e) => println!("[ERROR] Failed to set seedbox IP for MyAnonaMouse: {}", e),
+            }
+        }
 
-        //     let mut qb_login = HashMap::new();
-        //     qb_login.insert(
-        //         "username",
-        //         env::var("QBITTORRENT_USERNAME")
-        //             .expect("[ERROR] Missing QBITTORRENT_USERNAME in environment variables"),
-        //     );
-        //     qb_login.insert(
-        //         "password",
-        //         env::var("QBITTORRENT_PASSWORD")
-        //             .expect("[ERROR] Missing QBITTORRENT_PASSWORD in environment variables"),
-        //     );
-        //     // qbt doesn't return error if invalid login
-        //     let auth_cookie = reqwest::Client::new()
-        //         .post(format!("{qb_url}/api/v2/auth/login"))
-        //         .form(&qb_login)
-        //         .send()
-        //         .await?
-        //         .headers()
-        //         .get("Set-Cookie")
-        //         .unwrap()
-        //         .to_owned();
-        //     println!("{:#?}", auth_cookie);
+        if env::var("SET_QBITTORRENT_PORT")
+            .unwrap_or_else(|_| "false".to_string())
+            .parse::<bool>()
+            .unwrap()
+        {
+            println!("[INFO] Setting QBittorrent port via API");
 
-        //     let mut headers = reqwest::header::HeaderMap::new();
-        //     headers.append("Host", "localhost:8080");
-        //     let mut qb_prefs = HashMap::new();
-        //     qb_prefs.insert(
-        //         "json",
-        //         serde_urlencoded::to_string(serde_json::json!({
-        //             "listen_port": qb_port.unwrap()
-        //         }))
-        //         .unwrap(),
-        //     );
-        //     reqwest::Client::new()
-        //         .post(format!("{qb_url}/api/v2/app/setPreferences"))
-        //         .form(&qb_prefs)
-        //         .header("Cookie", auth_cookie)
-        //         .send()
-        //         .await?
-        //         .error_for_status()
-        //         .expect("[ERROR] Failed to update QBittorrent port");
-        //     println!("[INFO] Forwarded port set in QBittorrent");
-        // }
+            // let mut qb_login = HashMap::new();
+            // qb_login.insert(
+            //     "username",
+            //     env::var("QBITTORRENT_USERNAME")
+            //         .expect("[ERROR] Missing QBITTORRENT_USERNAME in environment variables"),
+            // );
+            // qb_login.insert(
+            //     "password",
+            //     env::var("QBITTORRENT_PASSWORD")
+            //         .expect("[ERROR] Missing QBITTORRENT_PASSWORD in environment variables"),
+            // );
+            // // qbt doesn't return error if invalid login
+            // let auth_cookie = reqwest::Client::new()
+            //     .post(format!("{qb_url}/api/v2/auth/login"))
+            //     .form(&qb_login)
+            //     .send()
+            //     .await?
+            //     .headers()
+            //     .get("Set-Cookie")
+            //     .unwrap()
+            //     .to_owned();
+            // println!("{:#?}", auth_cookie);
+
+            let mut qb_prefs = HashMap::new();
+            qb_prefs.insert(
+                "json",
+                serde_urlencoded::to_string(serde_json::json!({
+                    "listen_port": payload.port
+                }))
+                .unwrap(),
+            );
+            match reqwest::Client::new()
+                .post(format!("{qb_url}/api/v2/app/setPreferences"))
+                .form(&qb_prefs)
+                .send()
+                .await?
+                .error_for_status()
+            {
+                Ok(_) => println!("[INFO] QBittorrent port set to {}", payload.port),
+                Err(_) => println!("[ERROR] Failed to update QBittorrent port"),
+            };
+        }
 
         println!("[INFO] Binding port, this will refresh every 15 minutes");
         loop {
