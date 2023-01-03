@@ -378,7 +378,9 @@ async fn main() -> Result<()> {
         .send()
         .await?
         .text()
-        .await?;
+        .await?
+        .trim_end()
+        .to_owned();
     println!(
         "[INFO] Successfully connected to PIA\n----------------------------------------------------------------------\nOld IP: {}\nNew IP: {}\n----------------------------------------------------------------------",
         old_ip, new_ip
@@ -442,10 +444,11 @@ async fn main() -> Result<()> {
                 serde_json::json!({
                     "port": payload.port,
                     "ip": new_ip
-                }),
+                })
+                .to_string(),
             )
             .await
-            .expect("[ERROR] failed to save data to file");
+            .expect("[ERROR] failed to save connection data to file");
             println!(
                 "[INFO] Connection data saved to {}/connection.json",
                 CONFIG_PATH
