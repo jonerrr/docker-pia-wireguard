@@ -475,7 +475,7 @@ async fn main() -> Result<()> {
             println!("[INFO] Setting seedbox IP for MyAnonaMouse");
             match reqwest::Client::new()
                 .get("https://t.myanonamouse.net/json/dynamicSeedbox.php")
-                .header("Cookie", mam_id)
+                .header("Cookie", format!("mam_id={mam_id}"))
                 .send()
                 .await?
                 .error_for_status()
