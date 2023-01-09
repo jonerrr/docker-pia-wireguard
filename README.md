@@ -15,7 +15,7 @@ This is a docker image that connects to Private Internet Access using wireguard.
 | CONNECTION_FILE      | Write a file that contains JSON data of the VPN IP and port (e.g. `{ "port": 1234, "ip": "127.0.0.1" }`). It will be located at `/config/connection.json`.          | `true`              | `false` |
 | PERSIST_PORT         | Persist the port signature so the same port can be reused. The data will be stored at `/config/signature.json`. This signature usually lasts for a couple of months | `true`              | `false` |
 | BYPASS_PORTS         | A comma separated list of ports that will send traffic through the local interface instead of PIA.                                                                  | `8080/tcp,8080/udp` | None    |
-| SET_QBITTORRENT_PORT | Automatically set the listening port in QBittorrent to the forwarded port. The QBittorrent API must be accessible via `localhost:8080` (without credentials).       | `true`              | `false` |
+| SET_QBITTORRENT_PORT | (possibly broken) Automatically set the listening port in QBittorrent to the forwarded port. The QBittorrent API must be accessible via `localhost:8080` (without credentials).       | `true`              | `false` |
 | MAM_ID               | If a `MAM_ID` is supplied, the dynamic seedbox IP for [MyAnonaMouse](https://www.myanonamouse.net/) will be set.                                                    | `x2s__aaa...`       | None    |
 
 `*` = Required
