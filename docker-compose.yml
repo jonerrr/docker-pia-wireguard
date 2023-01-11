@@ -17,7 +17,6 @@ services:
       - PERSIST_PORT
       - BYPASS_PORTS
       - MAM_ID
-      - SET_QBITTORRENT_PORT
     volumes:
       - ./config:/config
     cap_add:

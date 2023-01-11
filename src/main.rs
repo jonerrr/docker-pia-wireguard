@@ -490,7 +490,9 @@ async fn main() -> Result<()> {
             .parse::<bool>()
             .unwrap()
         {
-            println!("[INFO] Setting QBittorrent port via API");
+            println!("[WARN] Automatically setting QBittorrent port via API is currently broken");
+
+            // let qb_client = reqwest::Client::builder().cookie_store(true).build()?;
 
             // let mut qb_login = HashMap::new();
             // qb_login.insert(
@@ -504,35 +506,38 @@ async fn main() -> Result<()> {
             //         .expect("[ERROR] Missing QBITTORRENT_PASSWORD in environment variables"),
             // );
             // // qbt doesn't return error if invalid login
-            // let auth_cookie = reqwest::Client::new()
-            //     .post(format!("{qb_url}/api/v2/auth/login"))
+            // let data = qb_client
+            //     .post("http://localhost:8080/api/v2/auth/login")
             //     .form(&qb_login)
             //     .send()
-            //     .await?
-            //     .headers()
-            //     .get("Set-Cookie")
-            //     .unwrap()
-            //     .to_owned();
-            // println!("{:#?}", auth_cookie);
+            //     .await?;
 
-            let mut qb_prefs = HashMap::new();
-            qb_prefs.insert(
-                "json",
-                serde_urlencoded::to_string(serde_json::json!({
-                    "listen_port": payload.port
-                }))
-                .unwrap(),
-            );
-            match reqwest::Client::new()
-                .post(format!("localhost:8080/api/v2/app/setPreferences"))
-                .form(&qb_prefs)
-                .send()
-                .await?
-                .error_for_status()
-            {
-                Ok(_) => println!("[INFO] QBittorrent port set to {}", payload.port),
-                Err(_) => println!("[ERROR] Failed to update QBittorrent port"),
-            };
+            // let sid = data
+            //     .cookies()
+            //     .nth(0)
+            //     .expect("[ERROR] Failed to find QBittorrent session ID cookie");
+
+            // let mut qb_prefs = HashMap::new();
+            // qb_prefs.insert(
+            //     "json",
+            //     serde_urlencoded::to_string(serde_json::json!({
+            //         "listen_port": payload.port
+            //     }))
+            //     .unwrap(),
+            // );
+
+            // match qb_client
+            //     .post("http://localhost:8080/api/v2/app/setPreferences")
+            //     .header("Cookie", sid.value())
+            //     .header("Content-Type", "x-www-form-urlencoded")
+            //     .form(&qb_prefs)
+            //     .send()
+            //     .await?
+            //     .error_for_status()
+            // {
+            //     Ok(_) => println!("[INFO] QBittorrent port set to {}", payload.port),
+            //     Err(_) => println!("[ERROR] Failed to update QBittorrent port"),
+            // };
         }
 
         println!("[INFO] Binding port, this will refresh every 15 minutes");
