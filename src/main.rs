@@ -430,7 +430,7 @@ async fn main() -> Result<()> {
         let payload: Payload =
             serde_json::from_str(std::str::from_utf8(&base64::decode(&sig.payload)?).unwrap())?;
         println!(
-            "[INFO] Got PIA signature, expires at: {}",
+            "[INFO] PIA signature received. It expires at: {} UTC",
             payload.expires_at
         );
 
@@ -540,7 +540,7 @@ async fn main() -> Result<()> {
             // };
         }
 
-        println!("[INFO] Binding port, this will refresh every 15 minutes");
+        println!("[INFO] Binding to port {}. Do not exit the program because it must rebind every 15 minutes", payload.port);
         loop {
             if payload.expires_at.timestamp() < chrono::Utc::now().timestamp() {
                 // this might not be good but the token lasts months so you'll probably restart before this
@@ -559,11 +559,6 @@ async fn main() -> Result<()> {
             if pf_bind.status != "OK" {
                 bail!("[ERROR] Failed to bind port: {}", pf_bind.message)
             }
-            println!(
-                "[INFO] Successfully forwarded port: {}\n[INFO] Port signature expires at: {} UTC",
-                payload.port,
-                payload.expires_at.format("%d/%m/%Y %H:%M")
-            );
             sleep(Duration::from_secs(900)).await;
 
             //TODO add shutdown behavior using tokio select to end incoming connections
