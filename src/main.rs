@@ -122,16 +122,16 @@ async fn main() -> Result<()> {
     if region.offline {
         bail!("[ERROR] Selected server is offline")
     }
-    
-   let forward_port = env::var("PORT_FORWARDING")
+
+    let forward_port = env::var("PORT_FORWARDING")
         .unwrap_or_else(|_| "false".to_string())
         .parse::<bool>()
-        .unwrap()
-    
+        .unwrap();
+
     if !region.port_forward && forward_port {
         bail!("[ERROR] Selected server doesn't support port forwarding but PORT_FORWARDING is set to true")
     }
-    
+
     println!("[INFO] Region {} selected", region.name);
 
     let mut login = HashMap::new();
@@ -393,8 +393,7 @@ async fn main() -> Result<()> {
         old_ip, new_ip
     );
 
-    if forward_port
-    {
+    if forward_port {
         let persist_port = env::var("PERSIST_PORT")
             .unwrap_or_else(|_| "false".to_string())
             .parse::<bool>()
