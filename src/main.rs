@@ -568,5 +568,9 @@ async fn main() -> Result<()> {
         }
     }
 
+    loop {
+        sleep(Duration::from_secs(10000)).await;
+    }
+
     Ok(())
 }
