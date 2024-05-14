@@ -546,7 +546,7 @@ async fn main() -> Result<()> {
         println!("[INFO] Binding to port {}. Do not exit the program because it must rebind every 15 minutes", payload.port);
         loop {
             if payload.expires_at.timestamp() < chrono::Utc::now().timestamp() {
-                // this might not be good but the token lasts months so you'll probably restart before this
+                // this might not work but the token lasts months so you'll probably restart before this
                 println!("[INFO] Port signature expired, restarting process");
                 Command::new("/proc/self/exe").exec();
                 break;
